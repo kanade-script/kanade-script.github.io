@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100 случайных направлений</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Montserrat', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: white;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 1s ease;
+        }
+        
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+        
+        .btn {
+            position: relative;
+            padding: 15px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: 60px;
+            backdrop-filter: blur(5px);
+            background-color: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            background-color: rgba(255, 255, 255, 0.25);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
+        }
+        
+        .particles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .search-container {
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        #search {
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 50px;
+            border: none;
+            font-size: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #search:focus {
+            outline: none;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        footer {
+            margin-top: 50px;
+            color: white;
+            opacity: 0.8;
+            font-size: 0.9rem;
+            animation: fadeIn 1.5s ease;
+            text-align: center;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+            font-size: 1.2rem;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .buttons-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="particles" id="particles"></div>
+    
+    <div class="container">
+        <h1>100 случайных направлений</h1>
+        
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Поиск сайтов..." autocomplete="off">
+        </div>
+        
+        <div class="buttons-grid" id="buttonsContainer">
+            <!-- Кнопки будут сгенерированы через JavaScript -->
+        </div>
+    </div>
+    
+    <footer>
+        Нажмите на любую кнопку для перехода на случайный сайт. Всего доступно 100 вариантов.
+    </footer>
+    
+    <script>
+        // Большой список из 100 популярных сайтов
+        const sites = [
+            {name: "Google", url: "https://www.google.com", icon: "search"},
+            {name: "YouTube", url: "https://www.youtube.com", icon: "youtube"},
+            {name: "Facebook", url: "https://www.facebook.com", icon: "facebook"},
+            {name: "Wikipedia", url: "https://www.wikipedia.org", icon: "wikipedia-w"},
+            {name: "Twitter", url: "https://twitter.com", icon: "twitter"},
+            {name: "Instagram", url: "https://www.instagram.com", icon: "instagram"},
+            {name: "LinkedIn", url: "https://www.linkedin.com", icon: "linkedin"},
+            {name: "Reddit", url: "https://www.reddit.com", icon: "reddit"},
+            {name: "Netflix", url: "https://www.netflix.com", icon: "netflix"},
+            {name: "Amazon", url: "https://www.amazon.com", icon: "amazon"},
+            {name: "eBay", url: "https://www.ebay.com", icon: "ebay"},
+            {name: "Microsoft", url: "https://www.microsoft.com", icon: "microsoft"},
+            {name: "Apple", url: "https://www.apple.com", icon: "apple"},
+            {name: "GitHub", url: "https://github.com", icon: "github"},
+            {name: "Stack Overflow", url: "https://stackoverflow.com", icon: "stack-overflow"},
+            {name: "Spotify", url: "https://www.spotify.com", icon: "spotify"},
+            {name: "Twitch", url: "https://www.twitch.tv", icon: "twitch"},
+            {name: "Discord", url: "https://discord.com", icon: "discord"},
+            {name: "Telegram", url: "https://web.telegram.org", icon: "telegram"},
+            {name: "WhatsApp", url: "https://web.whatsapp.com", icon: "whatsapp"},
+            {name: "Pinterest", url: "https://www.pinterest.com", icon: "pinterest"},
+            {name: "TikTok", url: "https://www.tiktok.com", icon: "tiktok"},
+            {name: "Zoom", url: "https://zoom.us", icon: "video"},
+            {name: "Dropbox", url: "https://www.dropbox.com", icon: "dropbox"},
+            {name: "Adobe", url: "https://www.adobe.com", icon: "adobe"},
+            {name: "Airbnb", url: "https://www.airbnb.com", icon: "airbnb"},
+            {name: "Booking", url: "https://www.booking.com", icon: "bed"},
+            {name: "TripAdvisor", url: "https://www.tripadvisor.com", icon: "plane"},
+            {name: "CNN", url: "https://edition.cnn.com", icon: "newspaper"},
+            {name: "BBC", url: "https://www.bbc.com", icon: "globe"},
+            {name: "NY Times", url: "https://www.nytimes.com", icon: "newspaper"},
+            {name: "National Geographic", url: "https://www.nationalgeographic.com", icon: "mountain"},
+            {name: "NASA", url: "https://www.nasa.gov", icon: "rocket"},
+            {name: "ESPN", url: "https://www.espn.com", icon: "baseball-ball"},
+            {name: "IMDb", url: "https://www.imdb.com", icon: "film"},
+            {name: "SoundCloud", url: "https://soundcloud.com", icon: "soundcloud"},
+            {name: "Vimeo", url: "https://vimeo.com", icon: "vimeo"},
+            {name: "Flickr", url: "https://www.flickr.com", icon: "flickr"},
+            {name: "Shutterstock", url: "https://www.shutterstock.com", icon: "camera"},
+            {name: "Etsy", url: "https://www.etsy.com", icon: "etsy"},
+            {name: "Aliexpress", url: "https://www.aliexpress.com", icon: "shopping-cart"},
+            {name: "Walmart", url: "https://www.walmart.com", icon: "store"},
+            {name: "BestBuy", url: "https://www.bestbuy.com", icon: "tv"},
+            {name: "Target", url: "https://www.target.com", icon: "bullseye"},
+            {name: "Zillow", url: "https://www.zillow.com", icon: "home"},
+            {name: "Craigslist", url: "https://www.craigslist.org", icon: "list"},
+            {name: "Indeed", url: "https://www.indeed.com", icon: "briefcase"},
+            {name: "Glassdoor", url: "https://www.glassdoor.com", icon: "building"},
+            {name: "PayPal", url: "https://www.paypal.com", icon: "paypal"},
+            {name: "Venmo", url: "https://venmo.com", icon: "money-bill-wave"},
+            {name: "Coinbase", url: "https://www.coinbase.com", icon: "bitcoin"},
+            {name: "Binance", url: "https://www.binance.com", icon: "chart-line"},
+            {name: "Khan Academy", url: "https://www.khanacademy.org", icon: "graduation-cap"},
+            {name: "Coursera", url: "https://www.coursera.org", icon: "book"},
+            {name: "Udemy", url: "https://www.udemy.com", icon: "chalkboard-teacher"},
+            {name: "Duolingo", url: "https://www.duolingo.com", icon: "language"},
+            {name: "TED", url: "https://www.ted.com", icon: "comment"},
+            {name: "Quora", url: "https://www.quora.com", icon: "question"},
+            {name: "Medium", url: "https://medium.com", icon: "pen"},
+            {name: "Blogger", url: "https://www.blogger.com", icon: "blog"},
+            {name: "WordPress", url: "https://wordpress.com", icon: "wordpress"},
+            {name: "Wix", url: "https://www.wix.com", icon: "paint-brush"},
+            {name: "Shopify", url: "https://www.shopify.com", icon: "shop"},
+            {name: "Mozilla", url: "https://www.mozilla.org", icon: "firefox"},
+            {name: "Opera", url: "https://www.opera.com", icon: "opera"},
+            {name: "Brave", url: "https://brave.com", icon: "shield-alt"},
+            {name: "DuckDuckGo", url: "https://duckduckgo.com", icon: "search"},
+            {name: "Weather", url: "https://www.weather.com", icon: "cloud-sun"},
+            {name: "AccuWeather", url: "https://www.accuweather.com", icon: "bolt"},
+            {name: "MapQuest", url: "https://www.mapquest.com", icon: "map"},
+            {name: "Google Maps", url: "https://maps.google.com", icon: "map-marked-alt"},
+            {name: "Yelp", url: "https://www.yelp.com", icon: "utensils"},
+            {name: "Foursquare", url: "https://foursquare.com", icon: "map-pin"},
+            {name: "Uber", url: "https://www.uber.com", icon: "car"},
+            {name: "Lyft", url: "https://www.lyft.com", icon: "car-side"},
+            {name: "Expedia", url: "https://www.expedia.com", icon: "plane-departure"},
+            {name: "Kayak", url: "https://www.kayak.com", icon: "plane-arrival"},
+            {name: "Hotels.com", url: "https://www.hotels.com", icon: "hotel"},
+            {name: "Trivago", url: "https://www.trivago.com", icon: "search-dollar"},
+            {name: "McDonald's", url: "https://www.mcdonalds.com", icon: "hamburger"},
+            {name: "Starbucks", url: "https://www.starbucks.com", icon: "coffee"},
+            {name: "Domino's", url: "https://www.dominos.com", icon: "pizza-slice"},
+            {name: "Pizza Hut", url: "https://www.pizzahut.com", icon: "pizza-slice"},
+            {name: "Subway", url: "https://www.subway.com", icon: "bread-slice"},
+            {name: "KFC", url: "https://www.kfc.com", icon: "drumstick"},
+            {name: "Burger King", url: "https://www.bk.com", icon: "burger"},
+            {name: "IKEA", url: "https://www.ikea.com", icon: "couch"},
+            {name: "Home Depot", url: "https://www.homedepot.com", icon: "tools"},
+            {name: "Lowe's", url: "https://www.lowes.com", icon: "hammer"},
+            {name: "Wayfair", url: "https://www.wayfair.com", icon: "chair"},
+            {name: "Overstock", url: "https://www.overstock.com", icon: "box-open"},
+            {name: "Newegg", url: "https://www.newegg.com", icon: "laptop"},
+            {name: "HP", url: "https://www.hp.com", icon: "laptop-code"},
+            {name: "Dell", url: "https://www.dell.com", icon: "desktop"},
+            {name: "Lenovo", url: "https://www.lenovo.com", icon: "keyboard"},
+            {name: "Samsung", url: "https://www.samsung.com", icon: "mobile-alt"},
+            {name: "Sony", url: "https://www.sony.com", icon: "tv"},
+            {name: "LG", url: "https://www.lg.com", icon: "tv"}
+        ];
+
+        // Функция для создания кнопок
+        function createButtons() {
+            const container = document.getElementById('buttonsContainer');
+            
+            sites.forEach((site, index) => {
+                const btn = document.createElement('a');
+                btn.href = site.url;
+                btn.className = 'btn';
+                btn.target = '_blank';
+                btn.innerHTML = `<i class="fab fa-${site.icon}"></i>${site.name}`;
+                
+                // Добавляем небольшую задержку для анимации
+                btn.style.animation = `float 3s ease-in-out infinite ${index * 0.05}s`;
+                
+                container.appendChild(btn);
+            });
+        }
+
+        // Поиск по сайтам
+        document.getElementById('search').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const buttons = document.querySelectorAll('.btn');
+            
+            buttons.forEach(btn => {
+                const text = btn.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    btn.style.display = 'flex';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+        });
+
+        // Создание частиц для фона
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                const size = Math.random() * 10 + 5;
+                const posX = Math.random() * 100;
+                const posY = Math.random() * 100;
+                const delay = Math.random() * 5;
+                const duration = Math.random() * 10 + 10;
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${posX}%`;
+                particle.style.top = `${posY}%`;
+                particle.style.opacity = Math.random() * 0.5 + 0.1;
+                particle.style.animation = `float ${duration}s ease-in-out infinite ${delay}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Инициализация при загрузке страницы
+        window.onload = function() {
+            createParticles();
+            createButtons();
+        };
+    </script>
+</body>
+</html>
