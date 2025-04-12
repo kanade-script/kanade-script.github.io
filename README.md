@@ -1,1 +1,1 @@
-сайт временно закрыт или разработчик не заботится о проекте
+the site is temporarily closed or the developer does not care about the project
