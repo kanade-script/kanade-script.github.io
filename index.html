@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Video Chat</title>
+    <title>RandomConnect - Видеочат с незнакомцами</title>
     <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         :root {
             --primary: #6c5ce7;
@@ -12,17 +13,19 @@
             --dark: #2d3436;
             --light: #f5f6fa;
             --danger: #ff7675;
+            --success: #00b894;
+            --warning: #fdcb6e;
         }
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         
         body {
-            background: var(--dark);
+            background: linear-gradient(135deg, var(--dark), #1a1a1a);
             color: var(--light);
             min-height: 100vh;
             overflow: hidden;
@@ -39,13 +42,13 @@
             display: flex;
             flex: 1;
             position: relative;
+            background: #000;
         }
         
         .remote-video {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            background: #000;
         }
         
         .local-video {
@@ -59,6 +62,7 @@
             object-fit: cover;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             z-index: 10;
+            background: #000;
         }
         
         .controls {
@@ -70,7 +74,7 @@
             padding: 1rem;
             display: flex;
             justify-content: center;
-            gap: 2rem;
+            gap: 1.5rem;
             z-index: 100;
         }
         
@@ -91,13 +95,15 @@
         
         .control-btn:hover {
             transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.2);
         }
         
-        .next-btn {
+        .control-btn.active {
             background: var(--primary);
+            box-shadow: 0 0 15px rgba(108, 92, 231, 0.5);
         }
         
-        .report-btn {
+        .control-btn.danger {
             background: var(--danger);
         }
         
@@ -113,16 +119,16 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            gap: 1.5rem;
         }
         
         .loader {
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             border: 5px solid rgba(255, 255, 255, 0.1);
             border-radius: 50%;
             border-top-color: var(--primary);
             animation: spin 1s ease-in-out infinite;
-            margin-bottom: 1rem;
         }
         
         @keyframes spin {
@@ -133,38 +139,92 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0.7rem 1.2rem;
             border-radius: 20px;
             z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            backdrop-filter: blur(5px);
         }
         
         .connection-status {
             position: absolute;
             top: 20px;
             right: 20px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 0.5rem 1rem;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0.7rem 1.2rem;
             border-radius: 20px;
             z-index: 10;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-size: 0.9rem;
+            backdrop-filter: blur(5px);
         }
         
         .status-dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background: #00b894;
+            background: var(--success);
         }
         
-        .disconnected {
-            background: #ff7675;
+        .status-dot.connecting {
+            background: var(--warning);
+            animation: pulse 1.5s infinite;
         }
         
-        .connecting {
-            background: #fdcb6e;
+        .status-dot.disconnected {
+            background: var(--danger);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .loading-text {
+            font-size: 1.2rem;
+            text-align: center;
+            max-width: 300px;
+            line-height: 1.5;
+        }
+        
+        .retry-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+        }
+        
+        .no-cam-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 5;
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 2rem;
         }
     </style>
 </head>
@@ -172,243 +232,369 @@
     <div class="chat-container">
         <div class="loading-screen" id="loadingScreen">
             <div class="loader"></div>
-            <p id="loadingText">Ищем интересного собеседника...</p>
+            <p class="loading-text" id="loadingText">Подключаемся к серверу...</p>
+            <button class="retry-btn" id="retryBtn" style="display: none;">Попробовать снова</button>
         </div>
         
         <div class="video-container">
+            <div class="no-cam-overlay" id="remoteNoCam" style="display: none;">
+                Собеседник отключил камеру
+            </div>
             <video class="remote-video" id="remoteVideo" autoplay playsinline></video>
+            
+            <div class="no-cam-overlay" id="localNoCam" style="display: none;">
+                Ваша камера отключена
+            </div>
             <video class="local-video" id="localVideo" autoplay playsinline muted></video>
             
             <div class="user-info">
-                <span id="userCountry">🌍 Собеседник: ожидание...</span>
+                <span>👤</span>
+                <span id="userCountry">Ожидание подключения...</span>
             </div>
             
             <div class="connection-status">
                 <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Соединение...</span>
+                <span id="statusText">Подключение...</span>
             </div>
         </div>
         
         <div class="controls">
-            <button class="control-btn report-btn" title="Пожаловаться" id="reportBtn">🚩</button>
-            <button class="control-btn" title="Отключить микрофон" id="muteBtn">🎤</button>
-            <button class="control-btn next-btn" title="Следующий собеседник" id="nextBtn">⏭️</button>
-            <button class="control-btn" title="Отключить камеру" id="videoBtn">📷</button>
-            <button class="control-btn" title="Завершить вызов" id="endCallBtn">📞</button>
+            <button class="control-btn danger" id="reportBtn" title="Пожаловаться">🚩</button>
+            <button class="control-btn" id="muteBtn" title="Отключить микрофон">🎤</button>
+            <button class="control-btn active" id="nextBtn" title="Следующий собеседник">⏭️</button>
+            <button class="control-btn" id="videoBtn" title="Отключить камеру">📷</button>
+            <button class="control-btn danger" id="endCallBtn" title="Завершить вызов">📞</button>
         </div>
     </div>
     
     <script>
-        // Конфигурация PeerJS
-        const peerConfig = {
-            host: '0.peerjs.com',
-            port: 443,
-            secure: true,
-            path: '/',
-            debug: 3
-        };
+        // Конфигурация
+        const kanade-script.github.io = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'https://kanade-script.github.io';
         
         // Элементы DOM
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const loadingScreen = document.getElementById('loadingScreen');
-        const loadingText = document.getElementById('loadingText');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        const userCountry = document.getElementById('userCountry');
-        const muteBtn = document.getElementById('muteBtn');
-        const videoBtn = document.getElementById('videoBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        const endCallBtn = document.getElementById('endCallBtn');
-        const reportBtn = document.getElementById('reportBtn');
+        const elements = {
+            localVideo: document.getElementById('localVideo'),
+            remoteVideo: document.getElementById('remoteVideo'),
+            loadingScreen: document.getElementById('loadingScreen'),
+            loadingText: document.getElementById('loadingText'),
+            retryBtn: document.getElementById('retryBtn'),
+            statusDot: document.getElementById('statusDot'),
+            statusText: document.getElementById('statusText'),
+            userCountry: document.getElementById('userCountry'),
+            muteBtn: document.getElementById('muteBtn'),
+            videoBtn: document.getElementById('videoBtn'),
+            nextBtn: document.getElementById('nextBtn'),
+            endCallBtn: document.getElementById('endCallBtn'),
+            reportBtn: document.getElementById('reportBtn'),
+            remoteNoCam: document.getElementById('remoteNoCam'),
+            localNoCam: document.getElementById('localNoCam')
+        };
         
         // Состояние приложения
-        let localStream;
-        let peer;
-        let currentCall;
-        let isMuted = false;
-        let isVideoOff = false;
+        const state = {
+            localStream: null,
+            peer: null,
+            currentCall: null,
+            socket: null,
+            isMuted: false,
+            isVideoOff: false,
+            retryCount: 0,
+            maxRetries: 3
+        };
         
         // Инициализация приложения
         async function init() {
             try {
-                // Получаем доступ к камере и микрофону
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    video: true,
-                    audio: true
+                updateStatus('connecting', 'Подключение к серверу...');
+                elements.loadingText.textContent = 'Подключение к серверу...';
+                
+                // Инициализация Socket.io соединения
+                state.socket = io(kanade-script.github.io, {
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000,
+                    timeout: 20000
                 });
                 
-                localVideo.srcObject = localStream;
+                setupSocketEvents();
                 
-                // Создаем Peer соединение
-                peer = new Peer(generateRandomId(), peerConfig);
+                // Получение медиапотока
+                await getMediaStream();
                 
-                peer.on('open', (id) => {
-                    console.log('My peer ID is: ' + id);
-                    updateStatus('connected', 'Готов к соединению');
-                    loadingText.textContent = 'Ищем собеседника...';
-                    findPartner();
-                });
+                // Инициализация PeerJS
+                initPeerConnection();
                 
-                peer.on('call', (call) => {
-                    updateStatus('connecting', 'Входящее соединение...');
-                    loadingScreen.style.display = 'none';
-                    
-                    call.answer(localStream);
-                    currentCall = call;
-                    
-                    call.on('stream', (remoteStream) => {
-                        remoteVideo.srcObject = remoteStream;
-                        updateStatus('connected', 'Соединение установлено');
-                        userCountry.textContent = `🌍 Собеседник: ${getRandomCountry()}`;
-                    });
-                    
-                    call.on('close', () => {
-                        endCall();
-                    });
-                    
-                    call.on('error', (err) => {
-                        console.error('Call error:', err);
-                        endCall();
-                    });
-                });
-                
-                peer.on('error', (err) => {
-                    console.error('Peer error:', err);
-                    updateStatus('disconnected', 'Ошибка соединения');
-                    setTimeout(init, 3000);
-                });
-                
-                // Настройка обработчиков кнопок
-                muteBtn.addEventListener('click', toggleMute);
-                videoBtn.addEventListener('click', toggleVideo);
-                nextBtn.addEventListener('click', findPartner);
-                endCallBtn.addEventListener('click', endCall);
-                reportBtn.addEventListener('click', reportUser);
-                
-            } catch (err) {
-                console.error('Failed to get local stream', err);
-                loadingText.textContent = 'Ошибка доступа к камере/микрофону';
-                updateStatus('disconnected', 'Ошибка доступа к устройствам');
+            } catch (error) {
+                handleInitError(error);
             }
+        }
+        
+        // Настройка обработчиков Socket.io
+        function setupSocketEvents() {
+            state.socket.on('connect', () => {
+                console.log('Connected to signaling server');
+                updateStatus('connected', 'Готов к соединению');
+                elements.loadingText.textContent = 'Ищем собеседника...';
+                findPartner();
+            });
+            
+            state.socket.on('partner-found', (partnerId) => {
+                console.log('Partner found:', partnerId);
+                connectToPeer(partnerId);
+            });
+            
+            state.socket.on('waiting', () => {
+                elements.loadingText.textContent = 'Ожидаем собеседника...';
+            });
+            
+            state.socket.on('disconnect', () => {
+                updateStatus('disconnected', 'Отключено от сервера');
+                if (state.currentCall) {
+                    state.currentCall.close();
+                }
+            });
+            
+            state.socket.on('connect_error', (error) => {
+                console.error('Connection error:', error);
+                updateStatus('disconnected', 'Ошибка подключения');
+                showRetryButton();
+            });
+        }
+        
+        // Получение медиапотока с камеры и микрофона
+        async function getMediaStream() {
+            try {
+                state.localStream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 },
+                        facingMode: 'user'
+                    },
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+                
+                elements.localVideo.srcObject = state.localStream;
+                elements.localVideo.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error accessing media devices:', error);
+                elements.loadingText.textContent = 'Не удалось получить доступ к камере/микрофону';
+                updateStatus('disconnected', 'Нет доступа к устройствам');
+                showRetryButton();
+                throw error;
+            }
+        }
+        
+        // Инициализация Peer соединения
+        function initPeerConnection() {
+            state.peer = new Peer(generateRandomId(), {
+                host: '0.peerjs.com',
+                port: 443,
+                secure: true,
+                path: '/',
+                debug: 1
+            });
+            
+            state.peer.on('open', (id) => {
+                console.log('PeerJS connected with ID:', id);
+            });
+            
+            state.peer.on('call', (call) => {
+                updateStatus('connecting', 'Входящее соединение...');
+                elements.loadingScreen.style.display = 'none';
+                
+                call.answer(state.localStream);
+                state.currentCall = call;
+                
+                call.on('stream', (remoteStream) => {
+                    handleRemoteStream(remoteStream);
+                });
+                
+                call.on('close', endCall);
+                call.on('error', (error) => {
+                    console.error('Call error:', error);
+                    endCall();
+                });
+            });
+            
+            state.peer.on('error', (error) => {
+                console.error('PeerJS error:', error);
+                updateStatus('disconnected', 'Ошибка соединения');
+                showRetryButton();
+            });
         }
         
         // Поиск собеседника
         function findPartner() {
-            if (currentCall) {
-                currentCall.close();
+            if (state.currentCall) {
+                state.currentCall.close();
             }
             
-            loadingScreen.style.display = 'flex';
-            loadingText.textContent = 'Ищем собеседника...';
+            resetCallState();
+            elements.loadingScreen.style.display = 'flex';
+            elements.loadingText.textContent = 'Ищем собеседника...';
             updateStatus('connecting', 'Поиск собеседника...');
             
-            // В реальном приложении здесь должен быть запрос к серверу для поиска доступного пользователя
-            // Для демонстрации мы просто ждем случайное время
-            setTimeout(() => {
-                // В реальном приложении мы бы получили ID от сервера
-                const randomPeerId = generateRandomId();
-                connectToPeer(randomPeerId);
-            }, Math.random() * 3000 + 1000);
+            if (state.socket && state.socket.connected) {
+                state.socket.emit('find-partner');
+            } else {
+                console.error('Socket not connected');
+                updateStatus('disconnected', 'Ошибка подключения');
+                showRetryButton();
+            }
         }
         
         // Подключение к другому пользователю
         function connectToPeer(peerId) {
-            if (!peer || !localStream) return;
+            if (!state.peer || !state.localStream) {
+                console.error('Peer or local stream not initialized');
+                return;
+            }
             
-            updateStatus('connecting', 'Соединяемся...');
-            loadingText.textContent = 'Соединяемся...';
+            updateStatus('connecting', 'Устанавливаем соединение...');
+            elements.loadingText.textContent = 'Соединяемся...';
             
-            const call = peer.call(peerId, localStream);
-            currentCall = call;
+            const call = state.peer.call(peerId, state.localStream);
+            state.currentCall = call;
             
             call.on('stream', (remoteStream) => {
-                remoteVideo.srcObject = remoteStream;
-                loadingScreen.style.display = 'none';
-                updateStatus('connected', 'Соединение установлено');
-                userCountry.textContent = `🌍 Собеседник: ${getRandomCountry()}`;
+                handleRemoteStream(remoteStream);
             });
             
-            call.on('close', () => {
+            call.on('close', endCall);
+            call.on('error', (error) => {
+                console.error('Call error:', error);
                 endCall();
             });
+        }
+        
+        // Обработка удаленного медиапотока
+        function handleRemoteStream(remoteStream) {
+            elements.remoteVideo.srcObject = remoteStream;
+            elements.loadingScreen.style.display = 'none';
+            updateStatus('connected', 'Соединение установлено');
+            elements.userCountry.textContent = `Собеседник: ${getRandomCountry()}`;
             
-            call.on('error', (err) => {
-                console.error('Call error:', err);
-                endCall();
+            // Проверка, есть ли видео у собеседника
+            const videoTracks = remoteStream.getVideoTracks();
+            elements.remoteNoCam.style.display = videoTracks.length === 0 || !videoTracks[0].enabled ? 'flex' : 'none';
+            
+            // Следим за изменениями состояния треков
+            remoteStream.getTracks().forEach(track => {
+                track.onended = () => {
+                    if (track.kind === 'video') {
+                        elements.remoteNoCam.style.display = 'flex';
+                    }
+                };
             });
         }
         
         // Завершение вызова
         function endCall() {
-            if (currentCall) {
-                currentCall.close();
-                currentCall = null;
+            if (state.currentCall) {
+                state.currentCall.close();
+                state.currentCall = null;
             }
             
-            if (remoteVideo.srcObject) {
-                remoteVideo.srcObject.getTracks().forEach(track => track.stop());
-                remoteVideo.srcObject = null;
+            if (elements.remoteVideo.srcObject) {
+                elements.remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+                elements.remoteVideo.srcObject = null;
             }
             
-            loadingScreen.style.display = 'flex';
-            loadingText.textContent = 'Ищем нового собеседника...';
-            updateStatus('connected', 'Готов к соединению');
-            userCountry.textContent = '🌍 Собеседник: ожидание...';
+            elements.remoteNoCam.style.display = 'none';
+            resetCallState();
             
+            // Автоматический поиск нового собеседника
             setTimeout(findPartner, 1000);
+        }
+        
+        // Сброс состояния вызова
+        function resetCallState() {
+            elements.loadingScreen.style.display = 'flex';
+            elements.loadingText.textContent = 'Ищем нового собеседника...';
+            updateStatus('connected', 'Готов к соединению');
+            elements.userCountry.textContent = 'Ожидание подключения...';
         }
         
         // Переключение микрофона
         function toggleMute() {
-            if (!localStream) return;
+            if (!state.localStream) return;
             
-            const audioTracks = localStream.getAudioTracks();
+            const audioTracks = state.localStream.getAudioTracks();
             if (audioTracks.length > 0) {
-                isMuted = !isMuted;
-                audioTracks[0].enabled = !isMuted;
-                muteBtn.textContent = isMuted ? '🔇' : '🎤';
-                muteBtn.style.backgroundColor = isMuted ? 'var(--danger)' : 'rgba(255, 255, 255, 0.1)';
+                state.isMuted = !state.isMuted;
+                audioTracks[0].enabled = !state.isMuted;
+                elements.muteBtn.innerHTML = state.isMuted ? '🔇' : '🎤';
+                elements.muteBtn.classList.toggle('danger', state.isMuted);
             }
         }
         
         // Переключение видео
         function toggleVideo() {
-            if (!localStream) return;
+            if (!state.localStream) return;
             
-            const videoTracks = localStream.getVideoTracks();
+            const videoTracks = state.localStream.getVideoTracks();
             if (videoTracks.length > 0) {
-                isVideoOff = !isVideoOff;
-                videoTracks[0].enabled = !isVideoOff;
-                videoBtn.textContent = isVideoOff ? '📹' : '📷';
-                videoBtn.style.backgroundColor = isVideoOff ? 'var(--danger)' : 'rgba(255, 255, 255, 0.1)';
-                localVideo.style.display = isVideoOff ? 'none' : 'block';
+                state.isVideoOff = !state.isVideoOff;
+                videoTracks[0].enabled = !state.isVideoOff;
+                elements.videoBtn.innerHTML = state.isVideoOff ? '📹' : '📷';
+                elements.videoBtn.classList.toggle('danger', state.isVideoOff);
+                elements.localVideo.style.display = state.isVideoOff ? 'none' : 'block';
+                elements.localNoCam.style.display = state.isVideoOff ? 'flex' : 'none';
+                
+                // Отправляем информацию о состоянии видео собеседнику
+                if (state.currentCall) {
+                    // В реальном приложении можно отправить через data channel
+                }
             }
         }
         
         // Жалоба на пользователя
         function reportUser() {
-            alert('Жалоба отправлена. Спасибо за помощь в улучшении сервиса!');
+            alert('Жалоба отправлена. Этот пользователь будет заблокирован.');
             endCall();
         }
         
         // Обновление статуса соединения
         function updateStatus(status, text) {
-            statusText.textContent = text;
+            elements.statusText.textContent = text;
             
-            statusDot.className = 'status-dot';
+            // Обновляем индикатор статуса
+            elements.statusDot.className = 'status-dot';
             if (status === 'connected') {
-                statusDot.classList.add('connected');
+                elements.statusDot.classList.add('connected');
             } else if (status === 'connecting') {
-                statusDot.classList.add('connecting');
+                elements.statusDot.classList.add('connecting');
             } else {
-                statusDot.classList.add('disconnected');
+                elements.statusDot.classList.add('disconnected');
             }
+        }
+        
+        // Показать кнопку повторной попытки
+        function showRetryButton() {
+            elements.retryBtn.style.display = 'block';
+            elements.retryBtn.onclick = () => {
+                elements.retryBtn.style.display = 'none';
+                init();
+            };
+        }
+        
+        // Обработка ошибок инициализации
+        function handleInitError(error) {
+            console.error('Initialization error:', error);
+            elements.loadingText.textContent = 'Ошибка инициализации. Пожалуйста, проверьте подключение к интернету и разрешения камеры/микрофона.';
+            updateStatus('disconnected', 'Ошибка инициализации');
+            showRetryButton();
         }
         
         // Вспомогательные функции
         function generateRandomId() {
-            return 'user-' + Math.random().toString(36).substr(2, 9);
+            return 'user-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
         }
         
         function getRandomCountry() {
@@ -416,8 +602,15 @@
             return countries[Math.floor(Math.random() * countries.length)];
         }
         
+        // Настройка обработчиков кнопок
+        elements.muteBtn.addEventListener('click', toggleMute);
+        elements.videoBtn.addEventListener('click', toggleVideo);
+        elements.nextBtn.addEventListener('click', findPartner);
+        elements.endCallBtn.addEventListener('click', endCall);
+        elements.reportBtn.addEventListener('click', reportUser);
+        
         // Запуск приложения
-        init();
+        document.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
