@@ -3,614 +3,474 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RandomConnect - Видеочат с незнакомцами</title>
-    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <title>Будь моей Валентинкой!</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #6c5ce7;
-            --secondary: #a29bfe;
-            --dark: #2d3436;
-            --light: #f5f6fa;
-            --danger: #ff7675;
-            --success: #00b894;
-            --warning: #fdcb6e;
-        }
-        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Comic Sans MS', 'Chalkboard SE', cursive, sans-serif;
         }
         
         body {
-            background: linear-gradient(135deg, var(--dark), #1a1a1a);
-            color: var(--light);
+            background: linear-gradient(45deg, #ffafbd, #ffc3a0);
             min-height: 100vh;
-            overflow: hidden;
-        }
-        
-        .chat-container {
             display: flex;
-            flex-direction: column;
-            height: 100vh;
-            position: relative;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
         }
         
-        .video-container {
-            display: flex;
-            flex: 1;
-            position: relative;
-            background: #000;
-        }
-        
-        .remote-video {
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 25px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            max-width: 850px;
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .local-video {
-            position: absolute;
-            bottom: 100px;
-            right: 20px;
-            width: 200px;
-            height: 150px;
-            border-radius: 10px;
-            border: 3px solid var(--primary);
-            object-fit: cover;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            z-index: 10;
-            background: #000;
-        }
-        
-        .controls {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 1rem;
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            z-index: 100;
-        }
-        
-        .control-btn {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 1.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .control-btn:hover {
-            transform: scale(1.1);
-            background: rgba(255, 255, 255, 0.2);
-        }
-        
-        .control-btn.active {
-            background: var(--primary);
-            box-shadow: 0 0 15px rgba(108, 92, 231, 0.5);
-        }
-        
-        .control-btn.danger {
-            background: var(--danger);
-        }
-        
-        .loading-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--dark);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            gap: 1.5rem;
-        }
-        
-        .loader {
-            width: 60px;
-            height: 60px;
-            border: 5px solid rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
-            border-top-color: var(--primary);
-            animation: spin 1s ease-in-out infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .user-info {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 0.7rem 1.2rem;
-            border-radius: 20px;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            backdrop-filter: blur(5px);
-        }
-        
-        .connection-status {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 0.7rem 1.2rem;
-            border-radius: 20px;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            backdrop-filter: blur(5px);
-        }
-        
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--success);
-        }
-        
-        .status-dot.connecting {
-            background: var(--warning);
-            animation: pulse 1.5s infinite;
-        }
-        
-        .status-dot.disconnected {
-            background: var(--danger);
+            position: relative;
+            border: 8px solid #ff5e8e;
+            animation: pulse 2s infinite alternate;
         }
         
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0% { border-color: #ff5e8e; }
+            100% { border-color: #ff9eb5; }
         }
         
-        .loading-text {
-            font-size: 1.2rem;
-            text-align: center;
-            max-width: 300px;
-            line-height: 1.5;
+        h1 {
+            color: #ff3366;
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0 #ffcce0;
         }
         
-        .retry-btn {
-            background: var(--primary);
-            color: white;
+        .name {
+            color: #ff3366;
+            font-size: 4.2rem;
+            font-weight: bold;
+            margin: 5px 0 20px;
+            text-shadow: 3px 3px 0 #ffcce0;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #fff, 0 0 20px #fff, 0 0 30px #ff3366, 0 0 40px #ff3366; }
+            to { text-shadow: 0 0 20px #fff, 0 0 30px #ff5e8e, 0 0 40px #ff5e8e, 0 0 50px #ff5e8e; }
+        }
+        
+        .heart {
+            color: #ff3366;
+            font-size: 4rem;
+            margin: 15px 0;
+            animation: heartbeat 1.2s infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .message {
+            font-size: 1.7rem;
+            color: #d42a5e;
+            margin-bottom: 25px;
+            line-height: 1.6;
+            padding: 0 20px;
+        }
+        
+        .buttons-container {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 40px;
+            position: relative;
+            min-height: 140px;
+        }
+        
+        .btn {
+            padding: 18px 45px;
+            font-size: 1.9rem;
             border: none;
-            padding: 0.8rem 1.5rem;
             border-radius: 50px;
             cursor: pointer;
-            font-weight: 600;
-            margin-top: 1rem;
             transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
         }
         
-        .retry-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
+        #yes-btn {
+            background: linear-gradient(to right, #ff5e8e, #ff3366);
+            color: white;
+            position: static;
         }
         
-        .no-cam-overlay {
+        #no-btn {
+            background: linear-gradient(to right, #6c757d, #495057);
+            color: white;
             position: absolute;
+            transition: all 0.2s ease;
+        }
+        
+        #yes-btn:hover {
+            background: linear-gradient(to right, #ff3366, #e62958);
+            transform: scale(1.05);
+            box-shadow: 0 12px 20px rgba(255, 51, 102, 0.4);
+        }
+        
+        #no-btn:hover {
+            background: linear-gradient(to right, #495057, #343a40);
+        }
+        
+        .hearts-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 5;
-            color: white;
+            pointer-events: none;
+            overflow: hidden;
+            border-radius: 25px;
+        }
+        
+        .floating-heart {
+            position: absolute;
+            color: rgba(255, 51, 102, 0.3);
+            font-size: 1.5rem;
+            animation: float 6s linear infinite;
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .response-message {
+            font-size: 2.2rem;
+            color: #ff3366;
+            margin-top: 30px;
+            min-height: 70px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s;
+            padding: 10px;
+        }
+        
+        .show {
+            opacity: 1 !important;
+        }
+        
+        .instructions {
+            margin-top: 25px;
             font-size: 1.2rem;
-            text-align: center;
-            padding: 2rem;
+            color: #888;
+            font-style: italic;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            color: #ff5e8e;
+            font-size: 1.3rem;
+        }
+        
+        .russian-heart {
+            color: #ff3366;
+            display: inline-block;
+            animation: spin 4s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px 20px;
+            }
+            
+            h1 {
+                font-size: 2.8rem;
+            }
+            
+            .name {
+                font-size: 3.5rem;
+            }
+            
+            .message {
+                font-size: 1.5rem;
+            }
+            
+            .btn {
+                padding: 16px 35px;
+                font-size: 1.7rem;
+            }
+            
+            .buttons-container {
+                min-height: 160px;
+            }
+            
+            .response-message {
+                font-size: 1.9rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .name {
+                font-size: 2.8rem;
+            }
+            
+            .message {
+                font-size: 1.3rem;
+            }
+            
+            .btn {
+                padding: 14px 28px;
+                font-size: 1.5rem;
+            }
+            
+            .buttons-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 15px;
+                min-height: 220px;
+            }
+            
+            #no-btn {
+                position: relative;
+            }
+            
+            .response-message {
+                font-size: 1.7rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="chat-container">
-        <div class="loading-screen" id="loadingScreen">
-            <div class="loader"></div>
-            <p class="loading-text" id="loadingText">Подключаемся к серверу...</p>
-            <button class="retry-btn" id="retryBtn" style="display: none;">Попробовать снова</button>
+    <div class="container">
+        <h1>Будь моей Валентинкой,</h1>
+        
+        <div class="name">МАРГО!</div>
+        
+        <div class="heart">
+            <i class="fas fa-heart"></i>
+            <i class="fas fa-heart"></i>
+            <i class="fas fa-heart"></i>
         </div>
         
-        <div class="video-container">
-            <div class="no-cam-overlay" id="remoteNoCam" style="display: none;">
-                Собеседник отключил камеру
-            </div>
-            <video class="remote-video" id="remoteVideo" autoplay playsinline></video>
-            
-            <div class="no-cam-overlay" id="localNoCam" style="display: none;">
-                Ваша камера отключена
-            </div>
-            <video class="local-video" id="localVideo" autoplay playsinline muted></video>
-            
-            <div class="user-info">
-                <span>👤</span>
-                <span id="userCountry">Ожидание подключения...</span>
-            </div>
-            
-            <div class="connection-status">
-                <div class="status-dot" id="statusDot"></div>
-                <span id="statusText">Подключение...</span>
-            </div>
+        <p class="message">
+            Моё сердце бьётся только для тебя!<br>
+            Сделай меня самым счастливым человеком на свете<br>
+            и согласись быть моей Валентинкой в этот особенный день?
+        </p>
+        
+        <div class="buttons-container" id="buttons-container">
+            <button class="btn" id="yes-btn">ДА! <i class="fas fa-heart"></i></button>
+            <button class="btn" id="no-btn">НЕТ</button>
         </div>
         
-        <div class="controls">
-            <button class="control-btn danger" id="reportBtn" title="Пожаловаться">🚩</button>
-            <button class="control-btn" id="muteBtn" title="Отключить микрофон">🎤</button>
-            <button class="control-btn active" id="nextBtn" title="Следующий собеседник">⏭️</button>
-            <button class="control-btn" id="videoBtn" title="Отключить камеру">📷</button>
-            <button class="control-btn danger" id="endCallBtn" title="Завершить вызов">📞</button>
+        <div class="response-message" id="response-message"></div>
+        
+        <p class="instructions">
+            Попробуй нажать на кнопку "НЕТ"... она немного стесняется!
+        </p>
+        
+        <div class="footer">
+            Сделано с <span class="russian-heart"><i class="fas fa-heart"></i></span> специально для Марго
         </div>
+        
+        <div class="hearts-container" id="hearts-container"></div>
     </div>
-    
+
     <script>
-        // Конфигурация
-        const kanade-script.github.io = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000' 
-            : 'https://kanade-script.github.io';
+        // Получаем элементы DOM
+        const noBtn = document.getElementById('no-btn');
+        const yesBtn = document.getElementById('yes-btn');
+        const buttonsContainer = document.getElementById('buttons-container');
+        const responseMessage = document.getElementById('response-message');
+        const heartsContainer = document.getElementById('hearts-container');
         
-        // Элементы DOM
-        const elements = {
-            localVideo: document.getElementById('localVideo'),
-            remoteVideo: document.getElementById('remoteVideo'),
-            loadingScreen: document.getElementById('loadingScreen'),
-            loadingText: document.getElementById('loadingText'),
-            retryBtn: document.getElementById('retryBtn'),
-            statusDot: document.getElementById('statusDot'),
-            statusText: document.getElementById('statusText'),
-            userCountry: document.getElementById('userCountry'),
-            muteBtn: document.getElementById('muteBtn'),
-            videoBtn: document.getElementById('videoBtn'),
-            nextBtn: document.getElementById('nextBtn'),
-            endCallBtn: document.getElementById('endCallBtn'),
-            reportBtn: document.getElementById('reportBtn'),
-            remoteNoCam: document.getElementById('remoteNoCam'),
-            localNoCam: document.getElementById('localNoCam')
-        };
-        
-        // Состояние приложения
-        const state = {
-            localStream: null,
-            peer: null,
-            currentCall: null,
-            socket: null,
-            isMuted: false,
-            isVideoOff: false,
-            retryCount: 0,
-            maxRetries: 3
-        };
-        
-        // Инициализация приложения
-        async function init() {
-            try {
-                updateStatus('connecting', 'Подключение к серверу...');
-                elements.loadingText.textContent = 'Подключение к серверу...';
-                
-                // Инициализация Socket.io соединения
-                state.socket = io(kanade-script.github.io, {
-                    reconnectionAttempts: 5,
-                    reconnectionDelay: 1000,
-                    timeout: 20000
-                });
-                
-                setupSocketEvents();
-                
-                // Получение медиапотока
-                await getMediaStream();
-                
-                // Инициализация PeerJS
-                initPeerConnection();
-                
-            } catch (error) {
-                handleInitError(error);
+        // Создаем плавающие сердечки
+        function createFloatingHearts() {
+            for (let i = 0; i < 25; i++) {
+                const heart = document.createElement('div');
+                heart.classList.add('floating-heart');
+                heart.innerHTML = '<i class="fas fa-heart"></i>';
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.fontSize = (Math.random() * 1.5 + 1) + 'rem';
+                heart.style.animationDelay = Math.random() * 5 + 's';
+                heart.style.animationDuration = (Math.random() * 4 + 4) + 's';
+                heartsContainer.appendChild(heart);
             }
         }
         
-        // Настройка обработчиков Socket.io
-        function setupSocketEvents() {
-            state.socket.on('connect', () => {
-                console.log('Connected to signaling server');
-                updateStatus('connected', 'Готов к соединению');
-                elements.loadingText.textContent = 'Ищем собеседника...';
-                findPartner();
-            });
+        // Перемещаем кнопку НЕТ в случайное место
+        function moveNoButton() {
+            const containerRect = buttonsContainer.getBoundingClientRect();
+            const btnRect = noBtn.getBoundingClientRect();
             
-            state.socket.on('partner-found', (partnerId) => {
-                console.log('Partner found:', partnerId);
-                connectToPeer(partnerId);
-            });
+            // Вычисляем максимальные позиции для удержания кнопки внутри контейнера
+            const maxX = containerRect.width - btnRect.width;
+            const maxY = containerRect.height - btnRect.height;
             
-            state.socket.on('waiting', () => {
-                elements.loadingText.textContent = 'Ожидаем собеседника...';
-            });
+            // Генерируем случайную позицию внутри контейнера
+            const randomX = Math.random() * maxX;
+            const randomY = Math.random() * maxY;
             
-            state.socket.on('disconnect', () => {
-                updateStatus('disconnected', 'Отключено от сервера');
-                if (state.currentCall) {
-                    state.currentCall.close();
+            // Применяем новую позицию
+            noBtn.style.left = randomX + 'px';
+            noBtn.style.top = randomY + 'px';
+            
+            // Иногда меняем текст кнопки
+            const noTexts = ['НЕТ', 'Уверена?', 'Может позже?', 'Подумай ещё!', 'Не сегодня!', 'Попробуй ещё раз!', 'Точно?', 'Ой...'];
+            const randomText = noTexts[Math.floor(Math.random() * noTexts.length)];
+            noBtn.textContent = randomText;
+            
+            // Немного меняем цвет кнопки
+            const grayShades = ['#6c757d', '#495057', '#5a6268', '#545b62'];
+            const randomShade = grayShades[Math.floor(Math.random() * grayShades.length)];
+            noBtn.style.background = `linear-gradient(to right, ${randomShade}, #343a40)`;
+        }
+        
+        // Обработка нажатия кнопки ДА
+        function handleYesClick() {
+            responseMessage.textContent = "Ура! Теперь я самый счастливый человек на свете! 💖💖💖";
+            responseMessage.classList.add('show');
+            
+            // Создаем праздничные сердечки
+            for (let i = 0; i < 60; i++) {
+                const heart = document.createElement('div');
+                heart.classList.add('floating-heart');
+                heart.innerHTML = '<i class="fas fa-heart"></i>';
+                heart.style.left = Math.random() * 100 + '%';
+                heart.style.fontSize = (Math.random() * 2 + 1.5) + 'rem';
+                heart.style.animationDelay = '0s';
+                heart.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                heart.style.color = '#ff3366';
+                heartsContainer.appendChild(heart);
+            }
+            
+            // Отключаем перемещение кнопки НЕТ
+            noBtn.style.pointerEvents = 'none';
+            noBtn.style.opacity = '0.5';
+            
+            // Меняем кнопку ДА
+            yesBtn.innerHTML = "СПАСИБО, МАРГО! <i class='fas fa-heart'></i> <i class='fas fa-heart'></i>";
+            yesBtn.style.fontSize = '2.3rem';
+            yesBtn.style.padding = '20px 50px';
+            yesBtn.style.background = 'linear-gradient(to right, #ff3366, #ff0066)';
+            yesBtn.disabled = true;
+            
+            // Добавляем специальное сообщение
+            setTimeout(() => {
+                const extraMessage = document.createElement('div');
+                extraMessage.innerHTML = "Жди сюрприз 14 февраля! <i class='fas fa-gift'></i>";
+                extraMessage.style.fontSize = '1.8rem';
+                extraMessage.style.color = '#ff3366';
+                extraMessage.style.marginTop = '20px';
+                extraMessage.style.fontWeight = 'bold';
+                extraMessage.style.animation = 'glow 2s ease-in-out infinite alternate';
+                responseMessage.parentNode.insertBefore(extraMessage, responseMessage.nextSibling);
+            }, 1500);
+        }
+        
+        // Обработка наведения на кнопку НЕТ (для десктопа)
+        noBtn.addEventListener('mouseover', function() {
+            if (window.innerWidth > 768) {
+                moveNoButton();
+            }
+        });
+        
+        // Обработка клика на кнопку НЕТ (для мобильных устройств)
+        noBtn.addEventListener('click', function() {
+            moveNoButton();
+            
+            // Показываем забавные сообщения
+            const messages = [
+                "Ой, да ладно тебе, подумай ещё раз!",
+                "Не торопись с решением!",
+                "Моё сердечко разбивается! 💔",
+                "Ты уверена в этом?",
+                "Может попробуешь другую кнопку?",
+                "Ты разбиваешь мне сердце!",
+                "Пожалуйста, передумай!",
+                "Ой-ой, кажется, ты ошиблась кнопкой!"
+            ];
+            const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+            responseMessage.textContent = randomMessage;
+            responseMessage.classList.add('show');
+            
+            // Убираем сообщение через 2 секунды
+            setTimeout(() => {
+                responseMessage.classList.remove('show');
+            }, 2000);
+        });
+        
+        // Обработка клика на кнопку ДА
+        yesBtn.addEventListener('click', handleYesClick);
+        
+        // Инициализация страницы
+        function init() {
+            createFloatingHearts();
+            
+            // Позиционируем кнопку НЕТ изначально
+            setTimeout(() => {
+                noBtn.style.position = 'absolute';
+                noBtn.style.left = '50%';
+                noBtn.style.top = '0';
+            }, 100);
+            
+            // Добавляем несколько сердечек с именем Марго
+            setTimeout(() => {
+                for (let i = 0; i < 5; i++) {
+                    const margoHeart = document.createElement('div');
+                    margoHeart.classList.add('floating-heart');
+                    margoHeart.innerHTML = '<i class="fas fa-heart"></i> Марго';
+                    margoHeart.style.left = Math.random() * 100 + '%';
+                    margoHeart.style.fontSize = (Math.random() * 1.2 + 1) + 'rem';
+                    margoHeart.style.animationDelay = Math.random() * 3 + 's';
+                    margoHeart.style.color = '#ff3366';
+                    margoHeart.style.fontWeight = 'bold';
+                    heartsContainer.appendChild(margoHeart);
                 }
-            });
-            
-            state.socket.on('connect_error', (error) => {
-                console.error('Connection error:', error);
-                updateStatus('disconnected', 'Ошибка подключения');
-                showRetryButton();
-            });
+            }, 500);
         }
         
-        // Получение медиапотока с камеры и микрофона
-        async function getMediaStream() {
-            try {
-                state.localStream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        facingMode: 'user'
-                    },
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    }
-                });
-                
-                elements.localVideo.srcObject = state.localStream;
-                elements.localVideo.style.display = 'block';
-                
-            } catch (error) {
-                console.error('Error accessing media devices:', error);
-                elements.loadingText.textContent = 'Не удалось получить доступ к камере/микрофону';
-                updateStatus('disconnected', 'Нет доступа к устройствам');
-                showRetryButton();
-                throw error;
+        // Инициализируем при загрузке страницы
+        window.addEventListener('DOMContentLoaded', init);
+        
+        // Делаем кнопку перемещаемой при касании для мобильных устройств
+        noBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            moveNoButton();
+        });
+        
+        // Добавляем обработчик для клавиатуры
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                moveNoButton();
             }
-        }
-        
-        // Инициализация Peer соединения
-        function initPeerConnection() {
-            state.peer = new Peer(generateRandomId(), {
-                host: '0.peerjs.com',
-                port: 443,
-                secure: true,
-                path: '/',
-                debug: 1
-            });
-            
-            state.peer.on('open', (id) => {
-                console.log('PeerJS connected with ID:', id);
-            });
-            
-            state.peer.on('call', (call) => {
-                updateStatus('connecting', 'Входящее соединение...');
-                elements.loadingScreen.style.display = 'none';
-                
-                call.answer(state.localStream);
-                state.currentCall = call;
-                
-                call.on('stream', (remoteStream) => {
-                    handleRemoteStream(remoteStream);
-                });
-                
-                call.on('close', endCall);
-                call.on('error', (error) => {
-                    console.error('Call error:', error);
-                    endCall();
-                });
-            });
-            
-            state.peer.on('error', (error) => {
-                console.error('PeerJS error:', error);
-                updateStatus('disconnected', 'Ошибка соединения');
-                showRetryButton();
-            });
-        }
-        
-        // Поиск собеседника
-        function findPartner() {
-            if (state.currentCall) {
-                state.currentCall.close();
-            }
-            
-            resetCallState();
-            elements.loadingScreen.style.display = 'flex';
-            elements.loadingText.textContent = 'Ищем собеседника...';
-            updateStatus('connecting', 'Поиск собеседника...');
-            
-            if (state.socket && state.socket.connected) {
-                state.socket.emit('find-partner');
-            } else {
-                console.error('Socket not connected');
-                updateStatus('disconnected', 'Ошибка подключения');
-                showRetryButton();
-            }
-        }
-        
-        // Подключение к другому пользователю
-        function connectToPeer(peerId) {
-            if (!state.peer || !state.localStream) {
-                console.error('Peer or local stream not initialized');
-                return;
-            }
-            
-            updateStatus('connecting', 'Устанавливаем соединение...');
-            elements.loadingText.textContent = 'Соединяемся...';
-            
-            const call = state.peer.call(peerId, state.localStream);
-            state.currentCall = call;
-            
-            call.on('stream', (remoteStream) => {
-                handleRemoteStream(remoteStream);
-            });
-            
-            call.on('close', endCall);
-            call.on('error', (error) => {
-                console.error('Call error:', error);
-                endCall();
-            });
-        }
-        
-        // Обработка удаленного медиапотока
-        function handleRemoteStream(remoteStream) {
-            elements.remoteVideo.srcObject = remoteStream;
-            elements.loadingScreen.style.display = 'none';
-            updateStatus('connected', 'Соединение установлено');
-            elements.userCountry.textContent = `Собеседник: ${getRandomCountry()}`;
-            
-            // Проверка, есть ли видео у собеседника
-            const videoTracks = remoteStream.getVideoTracks();
-            elements.remoteNoCam.style.display = videoTracks.length === 0 || !videoTracks[0].enabled ? 'flex' : 'none';
-            
-            // Следим за изменениями состояния треков
-            remoteStream.getTracks().forEach(track => {
-                track.onended = () => {
-                    if (track.kind === 'video') {
-                        elements.remoteNoCam.style.display = 'flex';
-                    }
-                };
-            });
-        }
-        
-        // Завершение вызова
-        function endCall() {
-            if (state.currentCall) {
-                state.currentCall.close();
-                state.currentCall = null;
-            }
-            
-            if (elements.remoteVideo.srcObject) {
-                elements.remoteVideo.srcObject.getTracks().forEach(track => track.stop());
-                elements.remoteVideo.srcObject = null;
-            }
-            
-            elements.remoteNoCam.style.display = 'none';
-            resetCallState();
-            
-            // Автоматический поиск нового собеседника
-            setTimeout(findPartner, 1000);
-        }
-        
-        // Сброс состояния вызова
-        function resetCallState() {
-            elements.loadingScreen.style.display = 'flex';
-            elements.loadingText.textContent = 'Ищем нового собеседника...';
-            updateStatus('connected', 'Готов к соединению');
-            elements.userCountry.textContent = 'Ожидание подключения...';
-        }
-        
-        // Переключение микрофона
-        function toggleMute() {
-            if (!state.localStream) return;
-            
-            const audioTracks = state.localStream.getAudioTracks();
-            if (audioTracks.length > 0) {
-                state.isMuted = !state.isMuted;
-                audioTracks[0].enabled = !state.isMuted;
-                elements.muteBtn.innerHTML = state.isMuted ? '🔇' : '🎤';
-                elements.muteBtn.classList.toggle('danger', state.isMuted);
-            }
-        }
-        
-        // Переключение видео
-        function toggleVideo() {
-            if (!state.localStream) return;
-            
-            const videoTracks = state.localStream.getVideoTracks();
-            if (videoTracks.length > 0) {
-                state.isVideoOff = !state.isVideoOff;
-                videoTracks[0].enabled = !state.isVideoOff;
-                elements.videoBtn.innerHTML = state.isVideoOff ? '📹' : '📷';
-                elements.videoBtn.classList.toggle('danger', state.isVideoOff);
-                elements.localVideo.style.display = state.isVideoOff ? 'none' : 'block';
-                elements.localNoCam.style.display = state.isVideoOff ? 'flex' : 'none';
-                
-                // Отправляем информацию о состоянии видео собеседнику
-                if (state.currentCall) {
-                    // В реальном приложении можно отправить через data channel
-                }
-            }
-        }
-        
-        // Жалоба на пользователя
-        function reportUser() {
-            alert('Жалоба отправлена. Этот пользователь будет заблокирован.');
-            endCall();
-        }
-        
-        // Обновление статуса соединения
-        function updateStatus(status, text) {
-            elements.statusText.textContent = text;
-            
-            // Обновляем индикатор статуса
-            elements.statusDot.className = 'status-dot';
-            if (status === 'connected') {
-                elements.statusDot.classList.add('connected');
-            } else if (status === 'connecting') {
-                elements.statusDot.classList.add('connecting');
-            } else {
-                elements.statusDot.classList.add('disconnected');
-            }
-        }
-        
-        // Показать кнопку повторной попытки
-        function showRetryButton() {
-            elements.retryBtn.style.display = 'block';
-            elements.retryBtn.onclick = () => {
-                elements.retryBtn.style.display = 'none';
-                init();
-            };
-        }
-        
-        // Обработка ошибок инициализации
-        function handleInitError(error) {
-            console.error('Initialization error:', error);
-            elements.loadingText.textContent = 'Ошибка инициализации. Пожалуйста, проверьте подключение к интернету и разрешения камеры/микрофона.';
-            updateStatus('disconnected', 'Ошибка инициализации');
-            showRetryButton();
-        }
-        
-        // Вспомогательные функции
-        function generateRandomId() {
-            return 'user-' + Math.random().toString(36).substr(2, 9) + '-' + Date.now().toString(36);
-        }
-        
-        function getRandomCountry() {
-            const countries = ['Россия', 'США', 'Германия', 'Франция', 'Япония', 'Бразилия', 'Китай', 'Индия', 'Италия', 'Испания'];
-            return countries[Math.floor(Math.random() * countries.length)];
-        }
-        
-        // Настройка обработчиков кнопок
-        elements.muteBtn.addEventListener('click', toggleMute);
-        elements.videoBtn.addEventListener('click', toggleVideo);
-        elements.nextBtn.addEventListener('click', findPartner);
-        elements.endCallBtn.addEventListener('click', endCall);
-        elements.reportBtn.addEventListener('click', reportUser);
-        
-        // Запуск приложения
-        document.addEventListener('DOMContentLoaded', init);
+        });
     </script>
 </body>
 </html>
